@@ -28,9 +28,9 @@ namespace AsmSpy.Core
 
         public void AddRoot(AssemblyReferenceInfo root) => roots.Add(root);
 
-        private static bool IsNotFound(AssemblyReferenceInfo assemblyInfo)
+        private static bool IsNotFound(AssemblyReferenceInfo reference)
         {
-            return assemblyInfo.AssemblySource == AssemblySource.NotFound && !assemblyInfo.HasAlternativeVersion;
+            return reference.ReferencedByRoot && reference.AssemblySource == AssemblySource.NotFound;
         }
     }
 }

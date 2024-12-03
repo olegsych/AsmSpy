@@ -63,7 +63,7 @@ namespace AsmSpy.CommandLine
                                 visualizerOptions,
                                 x.RootFileName)))
                         .Map(result => RunVisualizers(result, consoleLogger, visualizerOptions))
-                        .Bind(FailOnMissingAssemblies);
+                        .Bind(analysis => FailOnMissingAssemblies(analysis, failOnMissing));
 
                     switch (finalResult)
                     {
@@ -84,11 +84,6 @@ namespace AsmSpy.CommandLine
                         }
                         return dependencyAnalyzerResult;
                     }
-
-                    Result<bool> FailOnMissingAssemblies(DependencyAnalyzerResult dependencyAnalyzerResult)
-                        => failOnMissing.HasValue() && dependencyAnalyzerResult.MissingAssemblies.Any()
-                            ? "Missing Assemblies"
-                            : Result<bool>.Succeed(true);
                 }
                 catch (Exception exception)
                 {
@@ -117,6 +112,22 @@ namespace AsmSpy.CommandLine
             {
                 return -1;
             }
+        }
+
+        private static Result<bool> FailOnMissingAssemblies(DependencyAnalyzerResult analysis, CommandOption failOnMissing)
+        {
+            if (!failOnMissing.HasValue() || !analysis.MissingAssemblies.Any())
+                return Result<bool>.Succeed(true);
+
+            var errors = new StringBuilder();
+            foreach (AssemblyReferenceInfo assembly in analysis.MissingAssemblies) {
+                errors.Append($"Assembly '{assembly.AssemblyName}' could not be resolved.");
+                if (assembly.HasAlternativeVersion)
+                    errors.Append($" '{assembly.AssemblyName.Version}' is available but requires a binding redirect.");
+                errors.AppendLine();
+            }
+
+           return Result<bool>.Fail(errors.ToString());
         }
 
         private static Result<(List<FileInfo> FileList, string RootFileName)> GetFileList(CommandArgument directoryOrFile, CommandOption includeSubDirectories, ILogger logger)
