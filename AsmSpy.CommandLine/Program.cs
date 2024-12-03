@@ -123,7 +123,7 @@ namespace AsmSpy.CommandLine
             foreach (AssemblyReferenceInfo assembly in analysis.MissingAssemblies) {
                 errors.Append($"Assembly '{assembly.AssemblyName}' could not be resolved.");
                 if (assembly.HasAlternativeVersion)
-                    errors.Append($" '{assembly.AssemblyName.Version}' is available but requires a binding redirect.");
+                    errors.Append($" Version {assembly.AlternativeFoundVersion.AssemblyName.Version} is available but requires a binding redirect.");
                 errors.AppendLine();
             }
 
