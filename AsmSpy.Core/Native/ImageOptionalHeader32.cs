@@ -7,7 +7,9 @@ namespace AsmSpy.Core.Native
     {
         [FieldOffset(0)]
         public ushort Magic;
+        [FieldOffset(92)]
+        public ushort NumberOfRvaAndSizes;
         [FieldOffset(208)]
-        public ImageDataDirectory DataDirectory;
+        public ImageDataDirectory ComHeaderDirectory;
     }
 }

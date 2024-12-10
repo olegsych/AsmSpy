@@ -4,22 +4,22 @@ namespace AsmSpy.Core.Native
 {
     internal static class FileInfoExtensions
     {
-        private const int PageSize = 4096;
+        private const int BufferSize = 2048;
 
         internal static bool IsAssembly(this FileInfo fileInfo)
         {
             // Symbolic links always have a length of 0, which is the length of the symbolic link file (not the target file).
-            // After we read the first page of the file we check we actually got a page, so we can skip the check here safely.
-            if (fileInfo.Length < PageSize && !fileInfo.IsSymbolicLink())
+            // This check can be safely skipped.
+            if (fileInfo.Length < BufferSize && !fileInfo.IsSymbolicLink())
             {
                 return false;
             }
 
-            var data = new byte[PageSize];
+            var data = new byte[BufferSize];
             using (var fs = File.Open(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                var iRead = fs.Read(data, 0, PageSize);
-                if (iRead != PageSize)
+                int iRead = fs.Read(data, 0, BufferSize);
+                if (iRead != BufferSize)
                 {
                     return false;
                 }
@@ -29,27 +29,31 @@ namespace AsmSpy.Core.Native
             {
                 fixed (byte* pData = data)
                 {
-                    var idh = (ImageDosHeader*)pData;
-                    var inhs = (ImageNtHeaders32*)(idh->FileAddressOfNewExeHeader + pData);
-                    var machineType = (MachineType)inhs->FileHeader.Machine;
-                    if (machineType == MachineType.X64 &&
-                      inhs->OptionalHeader.Magic == 0x20b)
-                    {
-                        var dataDir =
-                          ((ImageNtHeaders64*)inhs)->OptionalHeader.DataDirectory;
-                        if (dataDir.Size <= 0)
-                        {
-                            return false;
-                        }
-                    }
-                    else if (inhs->OptionalHeader.DataDirectory.Size <= 0)
+                    var pDosHeader = (ImageDosHeader*)pData;
+                    var pNtHeader32 = (ImageNtHeaders32*)(pData + pDosHeader->FileAddressOfNewExeHeader);
+                    var pNtHeader64 = (ImageNtHeaders64*)pNtHeader32;
+
+                    // Prevent reading beyond the buffer
+                    if (pNtHeader64 + 1 > pData + BufferSize)
                     {
                         return false;
                     }
+
+                    ushort magic = pNtHeader32->OptionalHeader.Magic;
+
+                    if (magic == 0x10b)
+                    {
+                        return pNtHeader32->OptionalHeader.NumberOfRvaAndSizes >= 15
+                            && pNtHeader32->OptionalHeader.ComHeaderDirectory.VirtualAddress > 0;
+                    }
+                    if (magic == 0x20b)
+                    {
+                        return pNtHeader64->OptionalHeader.NumberOfRvaAndSizes >= 15
+                            && pNtHeader64->OptionalHeader.ComHeaderDirectory.VirtualAddress > 0;
+                    }
+                    return false;
                 }
             }
-
-            return true;
         }
 
         internal static bool IsSymbolicLink(this FileInfo fileInfo)
