@@ -1,14 +1,13 @@
-﻿namespace AsmSpy.Core.Native
+﻿using System.Runtime.InteropServices;
+
+namespace AsmSpy.Core.Native
 {
+    [StructLayout(LayoutKind.Explicit)]
     internal struct ImageDataDirectory
     {
-        public ImageDataDirectory(uint size, uint virtualAddress)
-        {
-            Size = size;
-            VirtualAddress = virtualAddress;
-        }
-
-        public uint VirtualAddress { get; }
-        public uint Size { get; }
+        [FieldOffset(0)]
+        public uint VirtualAddress;
+        [FieldOffset(4)]
+        public uint Size;
     }
 }

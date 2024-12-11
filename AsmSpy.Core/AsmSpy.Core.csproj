@@ -87,12 +87,10 @@
     <Compile Include="Native\FileInfoExtensions.cs" />
     <Compile Include="Native\ImageDataDirectory.cs" />
     <Compile Include="Native\ImageDosHeader.cs" />
-    <Compile Include="Native\ImageFileHeader.cs" />
     <Compile Include="Native\ImageNtHeaders32.cs" />
     <Compile Include="Native\ImageNtHeaders64.cs" />
     <Compile Include="Native\ImageOptionalHeader32.cs" />
     <Compile Include="Native\ImageOptionalHeader64.cs" />
-    <Compile Include="Native\MachineType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="VisualizerOptions.cs" />
