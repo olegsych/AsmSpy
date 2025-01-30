@@ -1,14 +1,14 @@
-using AsmSpy.CommandLine.Visualizers;
-using AsmSpy.Core;
-
-using Microsoft.Extensions.CommandLineUtils;
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
+using AsmSpy.CommandLine.Visualizers;
+using AsmSpy.Core;
+using Microsoft.Extensions.CommandLineUtils;
 
 namespace AsmSpy.CommandLine
 {
@@ -53,6 +53,7 @@ namespace AsmSpy.CommandLine
                     };
 
                     var consoleLogger = new ConsoleLogger(!silent.HasValue());
+                    WriteLogo(consoleLogger);
 
                     var finalResult = GetFileList(directoryOrFile, includeSubDirectories, consoleLogger)
                         .Bind(x => GetAppDomainWithBindingRedirects(configurationFile)
@@ -112,6 +113,16 @@ namespace AsmSpy.CommandLine
             {
                 return -1;
             }
+        }
+
+        private static void WriteLogo(ConsoleLogger console)
+        {
+            var program = Assembly.GetExecutingAssembly();
+            string title = program.GetCustomAttribute<AssemblyTitleAttribute>().Title;
+            string version = program.GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
+            console.LogMessage($"{title} {version} {RuntimeInformation.ProcessArchitecture}");
+            console.LogMessage(RuntimeInformation.FrameworkDescription);
+            console.LogMessage($"{RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture}");
         }
 
         private static Result<bool> FailOnMissingAssemblies(DependencyAnalyzerResult analysis, CommandOption failOnMissing)
