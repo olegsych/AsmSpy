@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -12,105 +13,122 @@ using Microsoft.Extensions.CommandLineUtils;
 
 namespace AsmSpy.CommandLine
 {
-    public static class Program
+    public class Program
     {
-        public static int Main(string[] args)
+        readonly CommandLineApplication command = new CommandLineApplication(throwOnUnexpectedArg: true);
+        readonly CommandArgument directoryOrFile;
+        readonly CommandOption silent;
+        readonly CommandOption nonsystem;
+        readonly CommandOption all;
+        readonly CommandOption referencedStartsWith;
+        readonly CommandOption excludeAssemblies;
+        readonly CommandOption includeSubDirectories;
+        readonly CommandOption configurationFile;
+        readonly CommandOption failOnMissing;
+        readonly IEnumerable<IDependencyVisualizer> visualizers = new IDependencyVisualizer[]
         {
-            Console.OutputEncoding = Encoding.Unicode;
+            new ConsoleVisualizer(),
+            new ConsoleTreeVisualizer(),
+            new DgmlExport(),
+            new XmlExport(),
+            new DotExport(),
+            new BindingRedirectExport(),
+        };
 
-            var commandLineApplication = new CommandLineApplication(throwOnUnexpectedArg: true);
-            var directoryOrFile = commandLineApplication.Argument("directoryOrFile", "The directory to search for assemblies or file path to a single assembly");
+        Program()
+        {
+            directoryOrFile = command.Argument("directoryOrFile", "The directory to search for assemblies or file path to a single assembly");
 
-            var silent = commandLineApplication.Option("-s|--silent", "Do not show any message, only warnings and errors will be shown.", CommandOptionType.NoValue);
+            silent = command.Option("-s|--silent", "Do not show any message, only warnings and errors will be shown.", CommandOptionType.NoValue);
+            nonsystem = command.Option("-n|--nonsystem", "Ignore 'System' assemblies", CommandOptionType.NoValue);
+            all = command.Option("-a|--all", "List all assemblies and references.", CommandOptionType.NoValue);
+            referencedStartsWith = command.Option("-rsw|--referencedstartswith", "Referenced Assembly should start with <string>. Will only analyze assemblies if their referenced assemblies starts with the given value.", CommandOptionType.SingleValue);
+            excludeAssemblies = command.Option("-e|--exclude", "A partial assembly name which should be excluded. This option can be provided multiple times", CommandOptionType.MultipleValue);
+            includeSubDirectories = command.Option("-i|--includesub", "Include subdirectories in search", CommandOptionType.NoValue);
+            configurationFile = command.Option("-c|--configurationFile", "Use the binding redirects of the given configuration file (Web.config or App.config)", CommandOptionType.SingleValue);
+            failOnMissing = command.Option("-f|--failOnMissing", "Whether to exit with an error code when AsmSpy detected Assemblies which could not be found", CommandOptionType.NoValue);
 
-            var nonsystem = commandLineApplication.Option("-n|--nonsystem", "Ignore 'System' assemblies", CommandOptionType.NoValue);
-            var all = commandLineApplication.Option("-a|--all", "List all assemblies and references.", CommandOptionType.NoValue);
-            var referencedStartsWith = commandLineApplication.Option("-rsw|--referencedstartswith", "Referenced Assembly should start with <string>. Will only analyze assemblies if their referenced assemblies starts with the given value.", CommandOptionType.SingleValue);
-            var excludeAssemblies = commandLineApplication.Option("-e|--exclude", "A partial assembly name which should be excluded. This option can be provided multiple times", CommandOptionType.MultipleValue);
+            foreach (IDependencyVisualizer v in visualizers)
+                v.CreateOption(command);
 
-            var includeSubDirectories = commandLineApplication.Option("-i|--includesub", "Include subdirectories in search", CommandOptionType.NoValue);
-            var configurationFile = commandLineApplication.Option("-c|--configurationFile", "Use the binding redirects of the given configuration file (Web.config or App.config)", CommandOptionType.SingleValue);
-            var failOnMissing = commandLineApplication.Option("-f|--failOnMissing", "Whether to exit with an error code when AsmSpy detected Assemblies which could not be found", CommandOptionType.NoValue);
+            command.HelpOption("-? | -h | --help");
 
-            var dependencyVisualizers = GetDependencyVisualizers();
-            foreach (var visualizer in dependencyVisualizers)
+            command.OnExecute(Execute);
+        }
+
+        int Execute()
+        {
+            var options = new VisualizerOptions
             {
-                visualizer.CreateOption(commandLineApplication);
-            }
+                SkipSystem = nonsystem.HasValue(),
+                OnlyConflicts = !all.HasValue(),
+                ReferencedStartsWith = referencedStartsWith.HasValue() ? referencedStartsWith.Value() : string.Empty,
+                Exclude = excludeAssemblies.HasValue() ? excludeAssemblies.Values : new List<string>()
+            };
 
-            commandLineApplication.HelpOption("-? | -h | --help");
+            var logger = new ConsoleLogger(!silent.HasValue());
+            WriteLogo(logger);
 
-            commandLineApplication.OnExecute(() =>
+            Result<bool> result = GetFileList(directoryOrFile, includeSubDirectories, logger)
+                .Bind(x => GetAppDomainWithBindingRedirects(configurationFile)
+                    .Map(appDomain => DependencyAnalyzer.Analyze(
+                        x.FileList,
+                        appDomain,
+                        logger,
+                        options,
+                        x.RootFileName)))
+                .Map(analysis => Visualize(analysis, logger, options))
+                .Bind(analysis => FailOnMissingAssemblies(analysis, failOnMissing));
+
+            switch (result)
             {
-                try
-                {
-                    var visualizerOptions = new VisualizerOptions
-                    {
-                        SkipSystem = nonsystem.HasValue(),
-                        OnlyConflicts = !all.HasValue(),
-                        ReferencedStartsWith = referencedStartsWith.HasValue() ? referencedStartsWith.Value() : string.Empty,
-                        Exclude = excludeAssemblies.HasValue() ? excludeAssemblies.Values : new List<string>()
-                    };
-
-                    var consoleLogger = new ConsoleLogger(!silent.HasValue());
-                    WriteLogo(consoleLogger);
-
-                    var finalResult = GetFileList(directoryOrFile, includeSubDirectories, consoleLogger)
-                        .Bind(x => GetAppDomainWithBindingRedirects(configurationFile)
-                            .Map(appDomain => DependencyAnalyzer.Analyze(
-                                x.FileList,
-                                appDomain,
-                                consoleLogger,
-                                visualizerOptions,
-                                x.RootFileName)))
-                        .Map(result => RunVisualizers(result, consoleLogger, visualizerOptions))
-                        .Bind(analysis => FailOnMissingAssemblies(analysis, failOnMissing));
-
-                    switch (finalResult)
-                    {
-                        case Failure<bool> fail:
-                            consoleLogger.LogError(fail.Message);
-                            return -1;
-                        case Success<bool> succeed:
-                            return 0;
-                        default:
-                            throw new InvalidOperationException("Unexpected result type");
-                    }
-
-                    DependencyAnalyzerResult RunVisualizers(DependencyAnalyzerResult dependencyAnalyzerResult, ILogger logger, VisualizerOptions options)
-                    {
-                        foreach (var visualizer in dependencyVisualizers.Where(x => x.IsConfigured()))
-                        {
-                            visualizer.Visualize(dependencyAnalyzerResult, logger, options);
-                        }
-                        return dependencyAnalyzerResult;
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception.ToString());
+                case Failure<bool> failure:
+                    logger.LogError(failure.Message);
                     return -1;
-                }
-            });
+                case Success<bool> success:
+                    return 0;
+                default:
+                    throw new InvalidOperationException("Unexpected result type");
+            }
+        }
 
+        DependencyAnalyzerResult Visualize(DependencyAnalyzerResult result, ILogger logger, VisualizerOptions options)
+        {
+            foreach (IDependencyVisualizer visualizer in visualizers.Where(x => x.IsConfigured()))
+                visualizer.Visualize(result, logger, options);
+            return result;
+        }
+
+        int Run(string[] args)
+        {
             try
             {
                 if (args == null || args.Length == 0)
                 {
-                    commandLineApplication.ShowHelp();
+                    command.ShowHelp();
                     return 0;
                 }
 
-                return commandLineApplication.Execute(args);
+                return command.Execute(args);
             }
-            catch (CommandParsingException cpe)
+            catch (CommandParsingException e)
             {
-                Console.WriteLine(cpe.Message);
-                commandLineApplication.ShowHelp();
+                Console.WriteLine(e.Message);
                 return -1;
             }
-            catch (Exception)
+        }
+
+        public static int Main(string[] args)
+        {
+            try
             {
+                Console.OutputEncoding = Encoding.Unicode;
+                var program = new Program();
+                return program.Run(args);
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e);
                 return -1;
             }
         }
@@ -190,15 +208,5 @@ namespace AsmSpy.CommandLine
                 return $"Failed creating AppDomain from configuration file with message {ex.Message}";
             }
         }
-
-        private static IDependencyVisualizer[] GetDependencyVisualizers() => new IDependencyVisualizer[]
-        {
-            new ConsoleVisualizer(),
-            new ConsoleTreeVisualizer(),
-            new DgmlExport(),
-            new XmlExport(),
-            new DotExport(),
-            new BindingRedirectExport()
-        };
     }
 }
