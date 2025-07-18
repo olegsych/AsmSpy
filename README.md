@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/edjm8l8ov2t2fkpv/branch/master?svg=true)](https://ci.appveyor.com/project/olegsych/asmspy/branch/master)
+[![Build status](https://github.com/olegsych/AsmSpy/workflows/Build/badge.svg)](https://github.com/olegsych/AsmSpy/actions/workflows/build.yml)
 
 AsmSpy
 ------
@@ -11,7 +11,7 @@ Install [from Chocolatey package](https://chocolatey.org/packages/asmspy):
 
     C:\> choco install asmspy
 
-Or download [AsmSpy as a .zip here](https://ci.appveyor.com/project/olegsych/asmspy/branch/master/artifacts). The .zip file contains AsmSpy.exe.
+Or download [AsmSpy as a .zip from the latest release](https://github.com/olegsych/AsmSpy/releases/latest). The .zip file contains AsmSpy.exe.
 
 ## How it works
 
