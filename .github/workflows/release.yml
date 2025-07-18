@@ -28,8 +28,9 @@ jobs:
       id: get_version
       run: |
         $version = $env:GITHUB_REF -replace 'refs/tags/', ''
-        echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
-        echo "Version: $version"
+        $buildVersion = "1.3.$version"
+        echo "VERSION=$buildVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "Version: $buildVersion"
       shell: pwsh
       
     - name: Update AssemblyInfo files
@@ -48,16 +49,16 @@ jobs:
       run: nuget restore AsmSpy.sln
       
     - name: Build solution
-      run: msbuild AsmSpy.sln /p:Configuration=Release /p:Platform="Any CPU" /verbosity:minimal
+      run: msbuild AsmSpy.sln /p:Configuration=Debug /p:Platform="Any CPU" /verbosity:minimal
       
     - name: Run tests
-      run: dotnet test AsmSpy.Core.Tests/AsmSpy.Core.Tests.csproj --configuration Release --no-build --verbosity normal
+      run: dotnet test AsmSpy.Core.Tests/AsmSpy.Core.Tests.csproj --configuration Debug --framework net472 --logger trx --results-directory TestResults
       
     - name: Create artifacts directory
       run: mkdir artifacts
       
     - name: Create ZIP artifact
-      run: 7z a artifacts/asmspy.${{ env.VERSION }}.zip ./AsmSpy.CommandLine/bin/Release/AsmSpy.exe
+      run: 7z a artifacts/asmspy.${{ env.VERSION }}.zip ./AsmSpy.CommandLine/bin/Debug/AsmSpy.exe
       
     - name: Pack Chocolatey package
       run: choco pack ./AsmSpy.CommandLine/AsmSpy.nuspec --version ${{ env.VERSION }} --outputdirectory artifacts
@@ -72,14 +73,16 @@ jobs:
         path: artifacts/
         
     - name: Create GitHub Release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ env.VERSION }}
-        release_name: Release ${{ env.VERSION }}
-        draft: false
-        prerelease: false
+        name: Release ${{ env.VERSION }}
+        files: |
+          artifacts/asmspy.${{ env.VERSION }}.zip
+          artifacts/asmspy.${{ env.VERSION }}.nupkg
+          artifacts/AsmSpy.Core.${{ env.VERSION }}.nupkg
         
     - name: Publish to Chocolatey
       if: env.CHOCOLATEY_API_KEY != ''
