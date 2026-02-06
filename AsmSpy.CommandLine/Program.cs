@@ -43,7 +43,7 @@ namespace AsmSpy.CommandLine
             nonsystem = command.Option("-n|--nonsystem", "Ignore 'System' assemblies", CommandOptionType.NoValue);
             all = command.Option("-a|--all", "List all assemblies and references.", CommandOptionType.NoValue);
             referencedStartsWith = command.Option("-rsw|--referencedstartswith", "Referenced Assembly should start with <string>. Will only analyze assemblies if their referenced assemblies starts with the given value.", CommandOptionType.SingleValue);
-            excludeAssemblies = command.Option("-e|--exclude", "A partial assembly name which should be excluded. This option can be provided multiple times", CommandOptionType.MultipleValue);
+            excludeAssemblies = command.Option("-e|--exclude", "Exclude assembly with given name. This option can be provided multiple times", CommandOptionType.MultipleValue);
             includeSubDirectories = command.Option("-i|--includesub", "Include subdirectories in search", CommandOptionType.NoValue);
             configurationFile = command.Option("-c|--configurationFile", "Use the binding redirects of the given configuration file (Web.config or App.config)", CommandOptionType.SingleValue);
             failOnMissing = command.Option("-f|--failOnMissing", "Whether to exit with an error code when AsmSpy detected Assemblies which could not be found", CommandOptionType.NoValue);
