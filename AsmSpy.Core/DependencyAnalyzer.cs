@@ -215,7 +215,7 @@ namespace AsmSpy.Core
                 return null;
             }
 
-            if (options.Exclude.Any(e => assemblyName.FullName.StartsWith(e, StringComparison.OrdinalIgnoreCase)))
+            if (options.Exclude.Any(e => assemblyName.Name.Equals(e, StringComparison.OrdinalIgnoreCase)))
             {
                 return null;
             }
