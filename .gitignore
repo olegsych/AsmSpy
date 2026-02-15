@@ -13,3 +13,5 @@ _ReSharper.*
 *.swp
 *.swo
 /packages
+artifacts/
+TestResults/

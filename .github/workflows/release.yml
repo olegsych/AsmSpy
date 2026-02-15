@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET Framework
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.x'
+        
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+      
+    - name: Get version from tag
+      id: get_version
+      run: |
+        $version = $env:GITHUB_REF -replace 'refs/tags/', ''
+        $buildVersion = "1.3.$version"
+        echo "VERSION=$buildVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "Version: $buildVersion"
+      shell: pwsh
+      
+    - name: Update AssemblyInfo files
+      run: |
+        $files = Get-ChildItem -Path . -Filter "AssemblyInfo.cs" -Recurse
+        foreach ($file in $files) {
+          $content = Get-Content $file.FullName
+          $content = $content -replace '\[assembly: AssemblyVersion\(".*"\)\]', "[assembly: AssemblyVersion(`"$env:VERSION`")]"
+          $content = $content -replace '\[assembly: AssemblyFileVersion\(".*"\)\]', "[assembly: AssemblyFileVersion(`"$env:VERSION`")]"
+          $content = $content -replace '\[assembly: AssemblyInformationalVersion\(".*"\)\]', "[assembly: AssemblyInformationalVersion(`"$env:VERSION`")]"
+          Set-Content $file.FullName $content
+        }
+      shell: pwsh
+      
+    - name: Restore NuGet packages
+      run: nuget restore AsmSpy.sln
+      
+    - name: Build solution
+      run: msbuild AsmSpy.sln /p:Configuration=Debug /p:Platform="Any CPU" /verbosity:minimal
+      
+    - name: Run tests
+      run: dotnet test AsmSpy.Core.Tests/AsmSpy.Core.Tests.csproj --configuration Debug --framework net472 --logger trx --results-directory TestResults
+      
+    - name: Create artifacts directory
+      run: mkdir artifacts
+      
+    - name: Create ZIP artifact
+      run: 7z a artifacts/asmspy.${{ env.VERSION }}.zip ./AsmSpy.CommandLine/bin/Debug/AsmSpy.exe
+      
+    - name: Pack Chocolatey package
+      run: choco pack ./AsmSpy.CommandLine/AsmSpy.nuspec --version ${{ env.VERSION }} --outputdirectory artifacts
+      
+    - name: Pack NuGet package
+      run: nuget pack ./AsmSpy.Core/AsmSpy.Core.nuspec -version ${{ env.VERSION }} -outputdirectory artifacts
+      
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: artifacts/
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.VERSION }}
+        name: Release ${{ env.VERSION }}
+        files: |
+          artifacts/asmspy.${{ env.VERSION }}.zip
+          artifacts/asmspy.${{ env.VERSION }}.nupkg
+          artifacts/AsmSpy.Core.${{ env.VERSION }}.nupkg
+        
+    - name: Publish to Chocolatey
+      if: env.CHOCOLATEY_API_KEY != ''
+      run: choco push artifacts/asmspy.${{ env.VERSION }}.nupkg --source https://push.chocolatey.org/ --api-key ${{ secrets.CHOCOLATEY_API_KEY }}
+      env:
+        CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        
+    - name: Publish to NuGet
+      if: env.NUGET_API_KEY != ''
+      run: nuget push artifacts/AsmSpy.Core.${{ env.VERSION }}.nupkg -Source https://api.nuget.org/v3/index.json -ApiKey ${{ secrets.NUGET_API_KEY }}
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
