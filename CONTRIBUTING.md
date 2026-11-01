@@ -33,9 +33,3 @@ pwsh -NoProfile -File .\CreateRelease.ps1
 Keep exactly one Core `nupkg` in `out/packages`; remove stale generated packages before repacking another commit.
 Publish packages from `out/packages` to NuGet and `out/chocolatey` to Chocolatey. The executable ZIP is in `out`.
 ILMerge cannot read portable PDBs, so only the unmerged assemblies retain debug symbols.
-
-## Versions and publication
-
-Version calculation requires full Git history. To publish, tag a master commit with `v<version>`, using the Core package
-version from that commit's successful master build. Configure both repository secrets `NUGET_API_KEY` and
-`CHOCOLATEY_API_KEY` before tagging. Ordinary master pushes produce artifacts without publishing.
