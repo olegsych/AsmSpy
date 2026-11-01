@@ -2,7 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <OutputType>Exe</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Company>Suteki Ltd</Company>
+    <Copyright>Copyright Suteki Ltd</Copyright>
+    <NeutralLanguage>en-US</NeutralLanguage>
     <Nullable>disable</Nullable>
     <Prefer32Bit>false</Prefer32Bit>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -22,6 +24,12 @@
     <ProjectReference Include="..\AsmSpy.Core\AsmSpy.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.ComVisibleAttribute">
+      <_Parameter1>false</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.GuidAttribute">
+      <_Parameter1>87c71050-29d8-4d2b-ad59-9f950e659915</_Parameter1>
+    </AssemblyAttribute>
     <EmbeddedResource Update="AsmSpy.CommandLine.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>AsmSpy.CommandLine.Designer.cs</LastGenOutput>

@@ -2,7 +2,8 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Company>Suteki Ltd</Company>
+    <Copyright>Copyright Suteki Ltd</Copyright>
     <Nullable>disable</Nullable>
     <IsPackable>true</IsPackable>
     <Description>Libraries for viewing assembly references and resolving dependency conflicts.</Description>
@@ -10,6 +11,15 @@
     <DevelopmentDependency>true</DevelopmentDependency>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.CLSCompliantAttribute">
+      <_Parameter1>true</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.ComVisibleAttribute">
+      <_Parameter1>false</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.GuidAttribute">
+      <_Parameter1>82f59078-4eff-405f-8daa-5892c5ff182c</_Parameter1>
+    </AssemblyAttribute>
     <Compile Remove="UnitTests.cs" />
     <None Include="..\licence.txt" Pack="true" PackagePath="LICENSE.txt" />
   </ItemGroup>

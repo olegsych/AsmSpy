@@ -2,12 +2,21 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <OutputType>Exe</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Company>Pinnacle</Company>
+    <Copyright>Copyright &#169; Pinnacle 2019</Copyright>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.ComVisibleAttribute">
+      <_Parameter1>false</_Parameter1>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Runtime.InteropServices.GuidAttribute">
+      <_Parameter1>15409f39-a1aa-4b51-b61d-7ee078d5c9e5</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
