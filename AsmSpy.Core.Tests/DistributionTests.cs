@@ -15,7 +15,6 @@ public sealed class DistributionTests
     {
         AssemblyName name = typeof(DependencyAnalyzer).Assembly.GetName();
         Assert.Equal("AsmSpy.Core", name.Name);
-        Assert.Equal(new Version(ThisAssembly.AssemblyVersion), name.Version);
         Assert.NotEmpty(name.GetPublicKeyToken());
         Assert.Equal(typeof(DistributionTests).Assembly.GetName().GetPublicKeyToken(), name.GetPublicKeyToken());
     }
@@ -27,7 +26,7 @@ public sealed class DistributionTests
         string executable = Path.Combine(bin, "AsmSpy.exe");
         AssemblyName name = AssemblyName.GetAssemblyName(executable);
         Assert.Equal("AsmSpy", name.Name);
-        Assert.Equal(new Version(ThisAssembly.AssemblyVersion), name.Version);
+        Assert.Equal(typeof(DependencyAnalyzer).Assembly.GetName().Version, name.Version);
         Assert.NotEmpty(name.GetPublicKeyToken());
         Assert.Equal(typeof(DistributionTests).Assembly.GetName().GetPublicKeyToken(), name.GetPublicKeyToken());
 
