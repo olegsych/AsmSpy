@@ -2,8 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <OutputType>Exe</OutputType>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile />
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>

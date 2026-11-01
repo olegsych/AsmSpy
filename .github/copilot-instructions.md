@@ -21,7 +21,7 @@
 
 - Initialize `modules/csharp.common` recursively and use real symlinks before building. Do not run its initializer
   blindly: it overwrites consumer-owned workflows and other managed copies.
-- Preserve AsmSpy's unsigned `net472` products and Windows executable ZIP/Chocolatey distribution.
+- Use shared signing defaults without project overrides. Preserve AsmSpy's `net472` products and Windows executable ZIP/Chocolatey distribution.
   Only Windows executes the Framework tests; Linux compiles and packages Core. The CLI is not a test application.
 - Use `AsmSpy.slnx`, central package versions, and GitVersioning; do not rewrite assembly versions or restore
   the retired AppVeyor/ZeroToNine release path. Read contributor guidance before changing engineering overrides.

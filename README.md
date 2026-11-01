@@ -24,7 +24,6 @@ It is not a `dotnet tool` or a cross-platform executable.
 The [AsmSpy.Core NuGet package](https://www.nuget.org/packages/AsmSpy.Core) exposes
 `DependencyAnalyzer`, `AssemblyReferenceInfo`, and `VisualizerOptions` for inspecting assembly references.
 It targets .NET Framework 4.7.2 and uses reflection-only loading, AppDomains, binding redirects, and the Windows GAC.
-The Core package and command-line executable remain unsigned.
 
 For source builds and release packaging, see [CONTRIBUTING.md](CONTRIBUTING.md).
 

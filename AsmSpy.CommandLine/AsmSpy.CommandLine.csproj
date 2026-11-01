@@ -2,8 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <OutputType>Exe</OutputType>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile />
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Nullable>disable</Nullable>
     <Prefer32Bit>false</Prefer32Bit>
@@ -36,7 +34,7 @@
   </ItemGroup>
   <Target Name="MergeExecutable" AfterTargets="Build"
           Condition="$([MSBuild]::IsOSPlatform('Windows'))"
-          Inputs="$(TargetPath);@(ReferenceCopyLocalPaths);$(MSBuildProjectFullPath);$(MSBuildProjectDirectory)\ilmerge.internalize.ignore.txt"
+          Inputs="$(TargetPath);@(ReferenceCopyLocalPaths);$(MSBuildProjectFullPath);$(AssemblyOriginatorKeyFile);$(MSBuildProjectDirectory)\ilmerge.internalize.ignore.txt"
           Outputs="$(TargetDir)AsmSpy.exe">
     <PropertyGroup>
       <FrameworkPath>$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net472)\build\.NETFramework\v4.7.2</FrameworkPath>
@@ -46,6 +44,6 @@
     <Error Condition="!Exists('$(FrameworkPath)\mscorlib.dll')" Text="Restore the .NET Framework 4.7.2 reference assemblies before merging." />
     <!-- ILMerge cannot read portable PDBs; keep them for the unmerged assemblies only. -->
     <Exec WorkingDirectory="$(TargetDir)"
-          Command="&quot;$(ILMergeExe)&quot; /ndebug /targetplatform:&quot;v4,$(FrameworkPath)&quot; /lib:&quot;$(FrameworkPath)\Facades&quot; /internalize:&quot;$(MSBuildProjectDirectory)\ilmerge.internalize.ignore.txt&quot; /target:exe /out:AsmSpy.exe /log:ilmerge.msbuild.log /allowDup AsmSpy.CommandLine.exe AsmSpy.Core.dll Microsoft.Extensions.CommandLineUtils.dll" />
+          Command="&quot;$(ILMergeExe)&quot; /keyfile:&quot;$(AssemblyOriginatorKeyFile)&quot; /ndebug /targetplatform:&quot;v4,$(FrameworkPath)&quot; /lib:&quot;$(FrameworkPath)\Facades&quot; /internalize:&quot;$(MSBuildProjectDirectory)\ilmerge.internalize.ignore.txt&quot; /target:exe /out:AsmSpy.exe /log:ilmerge.msbuild.log /allowDup AsmSpy.CommandLine.exe AsmSpy.Core.dll Microsoft.Extensions.CommandLineUtils.dll" />
   </Target>
 </Project>

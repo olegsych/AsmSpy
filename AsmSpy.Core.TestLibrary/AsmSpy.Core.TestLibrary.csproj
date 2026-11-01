@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile />
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

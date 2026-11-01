@@ -19,7 +19,7 @@ dotnet build -c Release --no-restore -bl:out\logs\build.binLog
 dotnet pack -c Release --no-build -bl:out\logs\pack.binLog
 ```
 
-Keep product assemblies unsigned to preserve their identity. When updating test dependencies, keep xUnit and the
+When updating test dependencies, keep xUnit and the
 coverage extension compatible with the selected Microsoft.Testing.Platform major version.
 
 ## Executable packaging

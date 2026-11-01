@@ -16,7 +16,8 @@ public sealed class DistributionTests
         AssemblyName name = typeof(DependencyAnalyzer).Assembly.GetName();
         Assert.Equal("AsmSpy.Core", name.Name);
         Assert.Equal(new Version(ThisAssembly.AssemblyVersion), name.Version);
-        Assert.Empty(name.GetPublicKeyToken());
+        Assert.NotEmpty(name.GetPublicKeyToken());
+        Assert.Equal(typeof(DistributionTests).Assembly.GetName().GetPublicKeyToken(), name.GetPublicKeyToken());
     }
 
     [Fact]
@@ -27,7 +28,8 @@ public sealed class DistributionTests
         AssemblyName name = AssemblyName.GetAssemblyName(executable);
         Assert.Equal("AsmSpy", name.Name);
         Assert.Equal(new Version(ThisAssembly.AssemblyVersion), name.Version);
-        Assert.Empty(name.GetPublicKeyToken());
+        Assert.NotEmpty(name.GetPublicKeyToken());
+        Assert.Equal(typeof(DistributionTests).Assembly.GetName().GetPublicKeyToken(), name.GetPublicKeyToken());
 
         string directory = Path.Combine(Path.GetTempPath(), "AsmSpy-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
