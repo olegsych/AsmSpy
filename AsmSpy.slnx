@@ -1,12 +1,4 @@
 <Solution>
-  <Folder Name="/SolutionItems/">
-    <File Path="CONTRIBUTING.md" />
-    <File Path="CreateRelease.ps1" />
-    <File Path="Directory.Packages.props" />
-    <File Path="licence.txt" />
-    <File Path="README.md" />
-    <File Path="version.json" />
-  </Folder>
   <Project Path="AsmSpy.CommandLine/AsmSpy.CommandLine.csproj" />
   <Project Path="AsmSpy.Core.TestLibrary/AsmSpy.Core.TestLibrary.csproj" />
   <Project Path="AsmSpy.Core.Tests/AsmSpy.Core.Tests.csproj" />
