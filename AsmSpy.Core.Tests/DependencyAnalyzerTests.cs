@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 
 using Xunit;
-using Xunit.Abstractions;
 
 namespace AsmSpy.Core.Tests
 {
@@ -28,7 +27,9 @@ namespace AsmSpy.Core.Tests
             var testBinDirectory = Path.GetDirectoryName(thisAssembly.Location);
             output.WriteLine(testBinDirectory);
 
-            filesToAnalyse = Directory.GetFiles(testBinDirectory, "*.dll").Select(x => new FileInfo(x));
+            filesToAnalyse = Directory.GetFiles(testBinDirectory, "*.dll")
+                .Concat(Directory.GetFiles(testBinDirectory, "*.exe"))
+                .Select(x => new FileInfo(x));
         }
 
         [Fact]
@@ -39,10 +40,10 @@ namespace AsmSpy.Core.Tests
             Assert.Contains(result.Assemblies.Values, x => x.AssemblyName.Name == "AsmSpy.Core");
             Assert.Contains(result.Assemblies.Values, x => x.AssemblyName.Name == "AsmSpy.Core.Tests");
             Assert.Contains(result.Assemblies.Values, x => x.AssemblyName.Name == "AsmSpy.Core.TestLibrary");
-            Assert.Contains(result.Assemblies.Values, x => x.AssemblyName.Name == "xunit.core");
+            Assert.Contains(result.Assemblies.Values, x => x.AssemblyName.Name == "xunit.v3.core");
         }
 
-        [Fact(Skip ="Fails in AppVeyor")]
+        [Fact(Skip = "Requires a stable set of system assemblies in the test output directory.")]
         public void AnalyzeShouldReturnSystemAssemblies()
         {
             var result = DependencyAnalyzer.Analyze(filesToAnalyse, null, logger, options);
@@ -76,7 +77,7 @@ namespace AsmSpy.Core.Tests
 
             Assert.Contains(tests.References, x => x.AssemblyName.Name == "AsmSpy.Core");
             Assert.Contains(tests.References, x => x.AssemblyName.Name == "AsmSpy.Core.TestLibrary");
-            Assert.Contains(tests.References, x => x.AssemblyName.Name == "xunit.core");
+            Assert.Contains(tests.References, x => x.AssemblyName.Name == "xunit.v3.core");
             foreach(var reference in tests.References)
             {
                 output.WriteLine(reference.AssemblyName.Name);

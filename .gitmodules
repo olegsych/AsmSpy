@@ -1,0 +1,3 @@
+[submodule "modules/csharp.common"]
+	path = modules/csharp.common
+	url = https://github.com/olegsych/csharp.common.git

@@ -11,18 +11,20 @@
     <summary>Command line tool to view assembly references.</summary>
     <description>AsmSpy is a Command line tool to view assembly references. It will output a list of all conflicting assembly references. That is where different assemblies in your bin folder reference different versions of the same assembly. 
     </description>
-    <projectUrl>https://github.com/mikehadlow/AsmSpy</projectUrl>
-    <projectSourceUrl>https://github.com/mikehadlow/AsmSpy</projectSourceUrl>
-    <docsUrl>https://github.com/mikehadlow/AsmSpy/blob/master/README.md</docsUrl>
-    <bugTrackerUrl>https://github.com/mikehadlow/AsmSpy/issues</bugTrackerUrl>
+    <projectUrl>https://github.com/olegsych/AsmSpy</projectUrl>
+    <projectSourceUrl>https://github.com/olegsych/AsmSpy</projectSourceUrl>
+    <docsUrl>https://github.com/olegsych/AsmSpy/blob/master/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/olegsych/AsmSpy/issues</bugTrackerUrl>
     <tags>asmspy console</tags>
     <copyright>Copyright © Suteki Ltd</copyright>
-    <licenseUrl>https://github.com/mikehadlow/AsmSpy/blob/master/licence.txt</licenseUrl>
+    <licenseUrl>https://github.com/olegsych/AsmSpy/blob/master/licence.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <releaseNotes>Publishing to Chocolatey</releaseNotes>
   </metadata>
   <files>
-    <file src="bin\Debug\AsmSpy.exe" target="tools" />
-    <file src="License.txt" target="tools" />
+    <file src="..\out\executable\AsmSpy.exe" target="tools" />
+    <file src="..\out\executable\AsmSpy.exe.config" target="tools" />
+    <file src="..\out\executable\LICENSE.txt" target="tools" />
+    <file src="..\out\executable\ThirdPartyNotices.txt" target="tools" />
   </files>
 </package>

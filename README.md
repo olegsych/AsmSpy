@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/edjm8l8ov2t2fkpv/branch/master?svg=true)](https://ci.appveyor.com/project/olegsych/asmspy/branch/master)
+[![Build status](https://github.com/olegsych/AsmSpy/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/olegsych/AsmSpy/actions/workflows/build.yml)
 
 AsmSpy
 ------
@@ -11,7 +11,22 @@ Install [from Chocolatey package](https://chocolatey.org/packages/asmspy):
 
     C:\> choco install asmspy
 
-Or download [AsmSpy as a .zip here](https://ci.appveyor.com/project/olegsych/asmspy/branch/master/artifacts). The .zip file contains AsmSpy.exe.
+Or download the `build-windows-latest` artifact from a successful
+[GitHub Actions build](https://github.com/olegsych/AsmSpy/actions/workflows/build.yml).
+It contains `asmspy.<version>.zip`, with the standalone `AsmSpy.exe`, its runtime configuration, and license notices.
+Extract the ZIP and run `AsmSpy.exe`; no additional AsmSpy DLLs are required.
+
+AsmSpy requires Windows and .NET Framework 4.7.2 or a compatible later Framework runtime.
+It is not a `dotnet tool` or a cross-platform executable.
+
+## Core library
+
+The [AsmSpy.Core NuGet package](https://www.nuget.org/packages/AsmSpy.Core) exposes
+`DependencyAnalyzer`, `AssemblyReferenceInfo`, and `VisualizerOptions` for inspecting assembly references.
+It targets .NET Framework 4.7.2 and uses reflection-only loading, AppDomains, binding redirects, and the Windows GAC.
+The Core package and command-line executable remain unsigned.
+
+For source builds and release packaging, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## How it works
 
