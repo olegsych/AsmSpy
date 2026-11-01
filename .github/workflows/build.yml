@@ -3,7 +3,6 @@ name: build
 on:
   push:
     branches: [master]
-    tags: ['v*']
   pull_request:
     branches: [master]
 
@@ -11,12 +10,10 @@ env:
   Artifacts: ${{ github.workspace }}/out
   Logs: ${{ github.workspace }}/out/logs
   Tests: ${{ github.workspace }}/out/tests
-  CI: 'true'
 
 jobs:
   build:
     strategy:
-      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -28,31 +25,16 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - run: dotnet restore
-      - name: Run .NET Framework tests on Windows
-        if: runner.os == 'Windows'
-        run: dotnet test -c Debug --no-restore -bl:"${{ env.Logs }}/test.binLog"
-      - name: Compile Debug on Linux (Framework tests require Windows)
-        if: runner.os != 'Windows'
-        run: dotnet build -c Debug --no-restore -bl:"${{ env.Logs }}/debug-build.binLog"
+      - run: dotnet test -c Debug --no-restore -bl:"${{ env.Logs }}/test.binLog"
       - run: dotnet build -c Release --no-restore -bl:"${{ env.Logs }}/build.binLog"
       - run: dotnet pack -c Release --no-build -bl:"${{ env.Logs }}/pack.binLog"
-      - name: Package Windows executable ZIP and Chocolatey package
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./CreateRelease.ps1
-      - name: Locate optional test and coverage reports
+      - name: Locate Codecov input files (workaround for files glob not working on Windows)
         if: always()
         id: test
         shell: pwsh
         run: |
-          $coverage = ''
-          $results = ''
-          if (Test-Path -LiteralPath $env:Tests) {
-            $coverage = (Get-ChildItem $env:Tests -Filter '*.cobertura.xml' | ForEach-Object FullName) -join ','
-            $results = (Get-ChildItem $env:Tests -Filter '*.junit.xml' | ForEach-Object FullName) -join ','
-          } else {
-            Write-Host 'No test reports: Framework tests run only on Windows, or the run stopped before testing.'
-          }
+          $coverage = (Get-ChildItem '${{ env.Tests }}/*.cobertura.xml' | ForEach-Object FullName) -join ','
+          $results = (Get-ChildItem '${{ env.Tests }}/*.junit.xml' | ForEach-Object FullName) -join ','
           "coverage=$coverage" >> $env:GITHUB_OUTPUT
           "results=$results" >> $env:GITHUB_OUTPUT
       - name: Upload coverage to Codecov
@@ -73,7 +55,6 @@ jobs:
           disable_search: true
           flags: ${{ matrix.os }}
           report_type: test_results
-          fail_ci_if_error: false
       - uses: actions/upload-artifact@v6
         if: always()
         with:
@@ -83,57 +64,28 @@ jobs:
   publish:
     runs-on: windows-latest
     needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
-          fetch-depth: 0
       - uses: actions/download-artifact@v6
         with:
           name: build-windows-latest
-          path: out
-      - name: Verify release tag and package version
-        shell: pwsh
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+      - name: Publish packages to NuGet.org
+        working-directory: packages
         run: |
-          if (-not $env:NUGET_API_KEY -or -not $env:CHOCOLATEY_API_KEY) {
-            throw 'Configure both publication API keys before creating a release tag.'
-          }
-          git merge-base --is-ancestor $env:GITHUB_SHA origin/master
-          if ($LASTEXITCODE -ne 0) { throw 'Release tags must refer to a commit on master.' }
-          $core = @(Get-ChildItem out/packages -Filter 'AsmSpy.Core.*.nupkg')
-          $cli = @(Get-ChildItem out/chocolatey -Filter 'asmspy.*.nupkg')
-          if ($core.Count -ne 1 -or $cli.Count -ne 1) { throw 'Expected exactly one Core and one executable package.' }
-          $version = $core[0].Name -replace '^AsmSpy\.Core\.(.+)\.nupkg$', '$1'
-          if ($env:GITHUB_REF_NAME -ne "v$version" -or $cli[0].Name -ne "asmspy.$version.nupkg") {
-            throw 'The release tag must match the GitVersioning package version.'
-          }
-          if (-not (Test-Path "out/asmspy.$version.zip") -or
-              -not (Test-Path "out/packages/AsmSpy.Core.$version.snupkg")) {
-            throw 'The release ZIP or Core symbols package is missing.'
-          }
-      - name: Publish Core to NuGet.org
-        shell: pwsh
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          dir "*.*nupkg" |
+          %{ dotnet nuget push $_ --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate }
+      - name: Tag commit with package version
+        working-directory: packages
         run: |
-          if (-not $env:NUGET_API_KEY) { throw 'NUGET_API_KEY is required for a release.' }
-          Get-ChildItem out/packages -Filter '*.*nupkg' | ForEach-Object {
-            dotnet nuget push $_.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
-            if ($LASTEXITCODE -ne 0) { throw "NuGet publication failed: $($_.Name)" }
-          }
-      - name: Publish executable to Chocolatey
-        shell: pwsh
-        env:
-          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-        run: |
-          if (-not $env:CHOCOLATEY_API_KEY) { throw 'CHOCOLATEY_API_KEY is required for a release.' }
-          Get-ChildItem out/chocolatey -Filter '*.nupkg' | ForEach-Object {
-            choco push $_.FullName --api-key $env:CHOCOLATEY_API_KEY --source https://push.chocolatey.org/
-            if ($LASTEXITCODE -ne 0) { throw "Chocolatey publication failed: $($_.Name)" }
+          $version = (dir *.nupkg | select -First 1).Name -replace '\D+\.(\d.+)\.nupkg','$1'
+          $tag = "v$version"
+          git fetch --tags
+          if (-not (git tag -l $tag)) {
+            git tag $tag
+            git push origin $tag
           }

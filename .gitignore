@@ -6,16 +6,3 @@ tmp/
 
 *.*log
 *.tmp
-
-# Existing contributor-local files and legacy restore directories.
-*.user
-*.suo
-*.bak
-*.ncb
-*.[Cc]ache
-*.DS_Store
-[Tt]humbs.db
-_ReSharper.*
-*.swp
-*.swo
-/packages/
