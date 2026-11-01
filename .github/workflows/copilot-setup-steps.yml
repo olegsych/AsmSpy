@@ -15,8 +15,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Enable real symlink checkout
-        run: git config --global core.symlinks true
       - uses: actions/checkout@v6
         with:
           submodules: recursive
