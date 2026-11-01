@@ -1,0 +1,91 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  Artifacts: ${{ github.workspace }}/out
+  Logs: ${{ github.workspace }}/out/logs
+  Tests: ${{ github.workspace }}/out/tests
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - run: dotnet restore
+      - run: dotnet test -c Debug --no-restore -bl:"${{ env.Logs }}/test.binLog"
+      - run: dotnet build -c Release --no-restore -bl:"${{ env.Logs }}/build.binLog"
+      - run: dotnet pack -c Release --no-build -bl:"${{ env.Logs }}/pack.binLog"
+      - name: Locate Codecov input files (workaround for files glob not working on Windows)
+        if: always()
+        id: test
+        shell: pwsh
+        run: |
+          $coverage = (Get-ChildItem '${{ env.Tests }}/*.cobertura.xml' | ForEach-Object FullName) -join ','
+          $results = (Get-ChildItem '${{ env.Tests }}/*.junit.xml' | ForEach-Object FullName) -join ','
+          "coverage=$coverage" >> $env:GITHUB_OUTPUT
+          "results=$results" >> $env:GITHUB_OUTPUT
+      - name: Upload coverage to Codecov
+        if: always() && steps.test.outputs.coverage != ''
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ steps.test.outputs.coverage }}
+          disable_search: true
+          flags: ${{ matrix.os }}
+          fail_ci_if_error: false
+      - name: Upload test results to Codecov
+        if: always() && steps.test.outputs.results != ''
+        uses: codecov/codecov-action@v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ steps.test.outputs.results }}
+          disable_search: true
+          flags: ${{ matrix.os }}
+          report_type: test_results
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: build-${{ matrix.os }}
+          path: ${{ env.Artifacts }}
+
+  publish:
+    runs-on: windows-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v6
+        with:
+          name: build-windows-latest
+      - name: Publish packages to NuGet.org
+        working-directory: packages
+        run: |
+          dir "*.*nupkg" |
+          %{ dotnet nuget push $_ --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate }
+      - name: Tag commit with package version
+        working-directory: packages
+        run: |
+          $version = (dir *.nupkg | select -First 1).Name -replace '\D+\.(\d.+)\.nupkg','$1'
+          $tag = "v$version"
+          git fetch --tags
+          if (-not (git tag -l $tag)) {
+            git tag $tag
+            git push origin $tag
+          }

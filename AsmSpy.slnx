@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="AsmSpy.CommandLine/AsmSpy.CommandLine.csproj" />
+  <Project Path="AsmSpy.Core.TestLibrary/AsmSpy.Core.TestLibrary.csproj" />
+  <Project Path="AsmSpy.Core.Tests/AsmSpy.Core.Tests.csproj" />
+  <Project Path="AsmSpy.Core/AsmSpy.Core.csproj" />
+</Solution>
