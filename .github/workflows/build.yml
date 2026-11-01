@@ -29,9 +29,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '10.0.x'
       - run: dotnet restore
       - name: Run .NET Framework tests on Windows
         if: runner.os == 'Windows'
@@ -98,9 +95,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '10.0.x'
       - uses: actions/download-artifact@v6
         with:
           name: build-windows-latest
